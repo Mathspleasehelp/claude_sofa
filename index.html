@@ -1,0 +1,1240 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Couch Talk Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a drafting sheet of the room on the left, the ledger of controls and odds on the right, the seat report and the maths underneath. */
+:root {
+  --paper: #eef1ef;
+  --sheet: #f9fbfa;
+  --ink: #1a2321;
+  --ink-2: #4a5654;
+  --ink-3: #75817f;
+  --rule: #d4dbd8;
+  --track: #e2e7e5;
+  --hover: #e5eae8;
+  --grid-minor: #e6ebe9;
+  --grid-major: #d6dedb;
+  --fabric: #d0d5d3;
+  --fabric-2: #b6bdba;
+  --fabric-line: #9aa3a0;
+  --g1: #12806e;
+  --g2: #5a4ec2;
+  --g3: #bd3a72;
+  --g4: #2d66c2;
+  --solo: #8d9895;
+  --on-c: #ffffff;
+  --risk: #c2412d;
+  --heat-1: #f2b33d;
+  --heat-2: #e8772c;
+  --heat-3: #cc3b2a;
+  --focus: #2d66c2;
+  --mx: #12806e;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111615; --sheet: #171e1d; --ink: #e1e8e5; --ink-2: #afbab7; --ink-3: #808c89;
+    --rule: #2b3533; --track: #242d2b; --hover: #1e2726; --grid-minor: #19211f; --grid-major: #232d2b;
+    --fabric: #38423f; --fabric-2: #4b5653; --fabric-line: #62706c;
+    --g1: #3cc2a8; --g2: #9d91f3; --g3: #ee79a8; --g4: #70a6f3; --solo: #7f8b88; --on-c: #0e1312;
+    --risk: #ff7b68; --focus: #70a6f3; --mx: #3cc2a8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111615; --sheet: #171e1d; --ink: #e1e8e5; --ink-2: #afbab7; --ink-3: #808c89;
+  --rule: #2b3533; --track: #242d2b; --hover: #1e2726; --grid-minor: #19211f; --grid-major: #232d2b;
+  --fabric: #38423f; --fabric-2: #4b5653; --fabric-line: #627066;
+  --g1: #3cc2a8; --g2: #9d91f3; --g3: #ee79a8; --g4: #70a6f3; --solo: #7f8b88; --on-c: #0e1312;
+  --risk: #ff7b68; --focus: #70a6f3; --mx: #3cc2a8;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 400 15px/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
+button, input, output { font: inherit; color: inherit; }
+.wrap {
+  max-width: 1280px; margin: 0 auto;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.mast { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 32px; padding-bottom: 22px; border-bottom: 1px solid var(--rule); margin-bottom: 22px; }
+.mast h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(32px, 5.2vw, 54px); line-height: 0.98; letter-spacing: -0.025em; margin: 0; text-wrap: balance; }
+.mast p { margin: 10px 0 0; max-width: 60ch; color: var(--ink-2); font-size: 16px; }
+.spec { font: 500 12px/1.7 var(--f-mono); color: var(--ink-2); letter-spacing: 0.02em; text-align: left; }
+@media (min-width: 760px) { .spec { text-align: right; } }
+.spec b { color: var(--ink); font-weight: 600; }
+
+/* Layout */
+.layout { display: flex; flex-direction: column; gap: 26px; }
+.col { display: contents; }
+#plan-sec { order: 1; } #controls { order: 2; } #readout { order: 3; } #splits { order: 4; }
+#seats { order: 5; } #matrix { order: 6; } #maths { order: 7; }
+@media (min-width: 1020px) {
+  .layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 32px; row-gap: 30px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+  #seats, #maths { grid-column: 1 / -1; }
+}
+section { min-width: 0; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 21px; letter-spacing: -0.01em; line-height: 1.2; margin: 0; text-wrap: balance; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 10px; }
+.sub { color: var(--ink-2); font-size: 14px; margin: 4px 0 0; max-width: 64ch; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* Plan sheet */
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 12px; }
+.plan-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-bottom: 8px; }
+.hint { font-size: 13px; color: var(--ink-3); }
+.plan { position: relative; width: 100%; max-width: 100%; aspect-ratio: 500 / 420; }
+.plan svg, .plan canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.plan canvas, .plan .base { pointer-events: none; }
+
+.base .gl-minor { stroke: var(--grid-minor); stroke-width: 0.6; fill: none; }
+.base .gl-major { stroke: var(--grid-major); stroke-width: 1; fill: none; }
+.base .back { fill: var(--fabric-2); stroke: var(--fabric-line); stroke-width: 0.8; }
+.base .cush { fill: var(--fabric); stroke: var(--fabric-line); stroke-width: 0.8; stroke-linejoin: round; }
+.base .modnum { font: 600 12px var(--f-mono); fill: var(--ink-2); text-anchor: middle; dominant-baseline: central; }
+.base .dim path { stroke: var(--ink-3); stroke-width: 0.9; fill: none; }
+.base .dim text { font: 500 11.5px var(--f-mono); fill: var(--ink-3); text-anchor: middle; }
+.base .spot { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; }
+.base .spot-l { font: italic 400 11px var(--f-body); fill: var(--ink-3); text-anchor: middle; }
+
+.top .hit > * { fill: transparent; cursor: pointer; }
+.top .hit:focus { outline: none; }
+.top .hit:focus-visible > * { stroke: var(--focus); stroke-width: 3; }
+.top .reach circle { fill: var(--c); fill-opacity: 0.045; stroke: var(--c); stroke-opacity: 0.55; stroke-width: 1.3; stroke-dasharray: 5 5; pointer-events: none; }
+.top .links { pointer-events: none; }
+.top .lk { stroke: var(--c); stroke-linecap: round; display: none; }
+.top .links.show .lk { display: inline; }
+.top.focus .lk.on { display: inline; stroke-opacity: 0.95; }
+.top.focus .links.show .lk:not(.on) { stroke-opacity: 0.08; }
+.top .lk.x { --c: var(--ink-3); }
+.top .wedges path { fill: var(--c); fill-opacity: 0.1; pointer-events: none; }
+.top .osp { pointer-events: none; }
+.top .osp circle { fill: var(--sheet); fill-opacity: 0.6; stroke: var(--c); stroke-width: 2.4; stroke-dasharray: 4 3; }
+.top .osp path { stroke: var(--c); stroke-width: 1.6; fill: none; }
+.top .osp .tie { stroke: var(--c); stroke-width: 1.3; stroke-dasharray: 1.5 4; stroke-linecap: round; opacity: 0.8; }
+.top .arrows { pointer-events: none; }
+.top .arrows line { stroke: var(--c); stroke-width: 3.4; stroke-linecap: round; }
+.top .arrows path { fill: var(--c); }
+.top .person { cursor: pointer; }
+.top .person .body { stroke: var(--c); stroke-opacity: 0.3; stroke-width: 34; stroke-linecap: round; }
+.top .person .head { fill: var(--c); stroke: var(--sheet); stroke-width: 2.5; }
+.top .person text { fill: var(--on-c); font: 600 17px var(--f-mono); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.top .person .risk-ring { fill: none; stroke: var(--risk); stroke-width: 2.2; stroke-dasharray: 3.5 3; }
+.top.focus .person:not(.on) { opacity: 0.45; }
+.top .empty { pointer-events: none; }
+.top .empty circle { fill: var(--sheet); stroke: var(--ink-3); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.top .empty path { stroke: var(--ink-3); stroke-width: 1.6; stroke-linecap: round; }
+.c0 { --c: var(--solo); } .c1 { --c: var(--g1); } .c2 { --c: var(--g2); } .c3 { --c: var(--g3); } .c4 { --c: var(--g4); }
+
+.legend { list-style: none; padding: 10px 0 0; margin: 8px 0 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.legend li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.legend svg { flex: none; width: 26px; height: 16px; overflow: visible; }
+
+/* Controls */
+.ctl { display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.row > .lbl { flex: none; width: 5.6rem; font-size: 13px; color: var(--ink-2); }
+.row.muted .seg { opacity: 0.55; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--sheet); }
+.seg button { background: transparent; border: 0; border-right: 1px solid var(--rule); padding: 6px 12px; min-height: 36px; cursor: pointer; font-size: 14px; font-weight: 500; }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { background: var(--hover); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg.num button { font-family: var(--f-mono); min-width: 40px; }
+.seg button:focus-visible, .chip:focus-visible, .split:focus-visible, .link-btn:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 4px 12px 4px 10px; min-height: 32px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 7px; }
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 3px; border: 1.5px solid var(--ink-3); }
+.chip[aria-pressed="true"] { border-color: var(--ink); }
+.chip[aria-pressed="true"]::before { background: var(--ink); border-color: var(--ink); }
+.note { font-size: 13px; color: var(--ink-3); }
+.note.flash { color: var(--risk); }
+details.knobs { border-top: 1px solid var(--rule); padding-top: 10px; }
+details.knobs summary { cursor: pointer; font-weight: 500; font-size: 14px; list-style-position: inside; }
+.knob-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 22px; margin-top: 12px; }
+.knob { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; }
+.knob label { font-size: 13.5px; font-weight: 500; }
+.knob output { font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; }
+.knob input { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); margin: 2px 0; }
+.knob small { grid-column: 1 / -1; color: var(--ink-3); font-size: 12px; }
+.link-btn { margin-top: 12px; background: none; border: 0; padding: 0; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-size: 13px; }
+
+/* Read-out */
+.read { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.read li { display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); gap: 2px 14px; font-size: 14.5px; }
+.read .k { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); padding-top: 2px; }
+.read .k.risk { color: var(--risk); }
+.read b { font-weight: 600; }
+@media (max-width: 480px) { .read li { grid-template-columns: 1fr; } }
+
+/* Splits */
+.split-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.split { width: 100%; display: grid; grid-template-columns: 1.7rem minmax(0, 1fr) 5.6rem; align-items: center; gap: 10px; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 10px; cursor: pointer; }
+.split:hover { background: var(--hover); }
+.split[aria-pressed="true"] { border-color: var(--ink); background: var(--sheet); }
+.split .rk { font: 500 12.5px var(--f-mono); color: var(--ink-3); }
+.pills { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px 1px 7px; border-radius: 999px; font: 500 13px/1.6 var(--f-mono); border: 1px solid color-mix(in srgb, var(--c) 50%, transparent); background: color-mix(in srgb, var(--c) 13%, transparent); white-space: nowrap; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.pill.c0 { background: transparent; border-style: dashed; color: var(--ink-2); }
+.pbar { display: grid; gap: 4px; justify-items: end; }
+.pbar b { font: 600 14px var(--f-mono); font-variant-numeric: tabular-nums; }
+.pbar .pt { height: 4px; border-radius: 2px; background: var(--track); justify-self: stretch; }
+.pbar .pt i { display: block; height: 100%; border-radius: 2px; background: var(--ink); }
+.split-foot { margin-top: 10px; font-size: 13px; color: var(--ink-3); }
+
+/* Seat report */
+.seat-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink-2); margin: 2px 0 12px; }
+.seat-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; background: var(--c); display: inline-block; }
+.sw.other { background: var(--fabric-2); }
+.sw.alone { background: repeating-linear-gradient(135deg, var(--solo) 0 2px, transparent 2px 5px); border: 1px solid var(--solo); }
+.sw.all { background: var(--ink); }
+.seat-table { border-top: 1px solid var(--rule); }
+.seat-head, .seat-row { display: grid; grid-template-columns: minmax(11rem, 1.25fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.55fr) minmax(7.5rem, 0.75fr); gap: 8px 18px; align-items: center; }
+.seat-head { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); padding: 9px 0; border-bottom: 1px solid var(--rule); }
+.seat-row { padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.sid { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dot { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--c); color: var(--on-c); display: grid; place-items: center; font: 600 14px var(--f-mono); }
+.sid b { display: block; font-weight: 600; }
+.sid small { display: block; color: var(--ink-2); font-size: 12.5px; }
+.ml { display: none; font-size: 12px; color: var(--ink-3); margin-bottom: 3px; }
+.metric { display: grid; grid-template-columns: minmax(0, 1fr) 3rem; align-items: center; gap: 8px; }
+.metric .ml { grid-column: 1 / -1; }
+.bar { position: relative; height: 8px; border-radius: 4px; background: var(--track); }
+.bar > span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--ink-2); }
+.bar.risk > span { background: var(--risk); }
+.bar > i { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.num { font: 500 13.5px var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.stack { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: var(--track); }
+.stack span { min-width: 0; overflow: hidden; display: grid; place-items: center; font: 600 11px var(--f-mono); color: var(--on-c); background: var(--c); white-space: nowrap; }
+.stack .other { background: var(--fabric-2); color: var(--ink); }
+.stack .alone { background: repeating-linear-gradient(135deg, var(--solo) 0 2px, transparent 2px 5px); color: var(--ink); }
+.stack .all { background: var(--ink); color: var(--paper); }
+.with { font: 500 13px/1.6 var(--f-mono); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.with b { color: var(--ink); font-weight: 600; }
+@media (max-width: 820px) {
+  .seat-head { display: none; }
+  .seat-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 18px; }
+  .seat-row .sid, .seat-row .odds { grid-column: 1 / -1; }
+  .ml { display: block; }
+}
+
+/* Matrix */
+.mx-wrap { overflow-x: auto; }
+.mx { border-collapse: separate; border-spacing: 3px; font: 500 12.5px var(--f-mono); font-variant-numeric: tabular-nums; }
+.mx th { font-weight: 600; color: var(--ink-2); width: 40px; height: 26px; }
+.mx td { width: 44px; height: 34px; text-align: center; border-radius: 5px; }
+.mx td.self { color: var(--ink-3); background: transparent; border: 1px dashed var(--rule); }
+
+/* Maths */
+.maths { border-top: 1px solid var(--rule); padding-top: 22px; }
+.steps { list-style: none; counter-reset: s; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 20px 34px; }
+.steps li { counter-increment: s; min-width: 0; }
+.steps h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; display: flex; gap: 8px; align-items: baseline; }
+.steps h3::before { content: counter(s); font: 600 12px var(--f-mono); color: var(--paper); background: var(--ink); border-radius: 4px; padding: 0 6px; }
+.steps p { margin: 0 0 6px; font-size: 14px; color: var(--ink-2); max-width: 62ch; }
+.eq { display: block; font: 500 13.5px/1.7 var(--f-mono); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 10px; margin: 6px 0 8px; overflow-wrap: anywhere; }
+.sources { margin-top: 20px; font-size: 13px; color: var(--ink-3); max-width: 110ch; }
+.sources b { color: var(--ink-2); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .split, .seg button, .chip { transition: background-color 120ms ease, border-color 120ms ease; }
+}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1>Couch Talk Simulator</h1>
+      <p>Pick who sits where and how they sit. The model scores every way the room could split into conversations, then shows who holds the floor and who drifts out.</p>
+    </div>
+    <div class="spec">
+      <div><b>6 modules</b> · U-shape</div>
+      <div>410 × 285 cm</div>
+      <div>2 extra spots · up to 8 people</div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div class="col">
+      <section id="plan-sec" aria-labelledby="plan-h">
+        <div class="sheet">
+          <div class="plan-bar">
+            <h2 id="plan-h">The room</h2>
+            <span class="hint">Tap a seat to add or remove someone</span>
+          </div>
+          <div class="plan">
+            <svg class="base" id="plan-base" viewBox="-45 -45 500 420" aria-hidden="true">
+              <defs>
+                <pattern id="gridpat" width="50" height="50" patternUnits="userSpaceOnUse">
+                  <path class="gl-minor" d="M10 0V50M20 0V50M30 0V50M40 0V50M0 10H50M0 20H50M0 30H50M0 40H50"/>
+                  <path class="gl-major" d="M0 0V50M0 0H50"/>
+                </pattern>
+              </defs>
+              <rect x="-45" y="-45" width="500" height="420" fill="url(#gridpat)"/>
+              <g class="dim">
+                <path d="M0 -20H410M0 -26V-14M410 -26V-14"/>
+                <text x="205" y="-26">410 cm</text>
+                <path d="M-20 0V284M-26 0H-14M-26 284H-14"/>
+                <text transform="translate(-26 142) rotate(-90)">285 cm</text>
+                <path d="M-20 356H80M-20 350V362M80 350V362M30 353V359"/>
+                <text x="30" y="347">1 m</text>
+              </g>
+              <g>
+                <rect class="back" x="1" y="0" width="108" height="25" rx="4"/>
+                <rect class="back" x="1" y="25" width="20" height="88" rx="4"/>
+                <path class="cush" d="M21 25H109V284H1V115H21Z"/>
+                <rect class="back" x="111" y="0" width="88" height="25" rx="4"/>
+                <rect class="cush" x="111" y="25" width="88" height="88" rx="4"/>
+                <rect class="back" x="201" y="0" width="88" height="25" rx="4"/>
+                <rect class="cush" x="201" y="25" width="88" height="88" rx="4"/>
+                <rect class="back" x="291" y="0" width="118" height="25" rx="4"/>
+                <rect class="back" x="389" y="25" width="20" height="88" rx="4"/>
+                <rect class="cush" x="291" y="25" width="96" height="88" rx="4"/>
+                <rect class="back" x="389" y="115" width="20" height="83" rx="4"/>
+                <rect class="cush" x="291" y="115" width="96" height="83" rx="4"/>
+                <rect class="back" x="389" y="200" width="20" height="84" rx="4"/>
+                <rect class="cush" x="291" y="200" width="96" height="84" rx="4"/>
+                <text class="modnum" x="55" y="13">1</text>
+                <text class="modnum" x="155" y="13">2</text>
+                <text class="modnum" x="245" y="13">3</text>
+                <text class="modnum" x="350" y="13">4</text>
+                <text class="modnum" x="399" y="157">5</text>
+                <text class="modnum" x="399" y="242">6</text>
+              </g>
+              <g>
+                <circle class="spot" cx="195" cy="190" r="28"/>
+                <text class="spot-l" x="195" y="236">floor · F</text>
+                <rect class="spot" x="177" y="314" width="46" height="40" rx="5"/>
+                <rect class="spot" x="175" y="356" width="50" height="7" rx="3"/>
+                <text class="spot-l" x="252" y="342">chair · C</text>
+              </g>
+            </svg>
+            <canvas id="plan-heat" width="250" height="210" aria-hidden="true"></canvas>
+            <svg class="top" id="plan-top" viewBox="-45 -45 500 420" role="group" aria-label="Sofa floor plan. Each seat is a button that adds or removes a person."></svg>
+          </div>
+          <ul class="legend">
+            <li><svg viewBox="0 0 26 16"><line x1="2" y1="8" x2="17" y2="8" stroke="var(--ink-2)" stroke-width="2.4" stroke-linecap="round"/><path d="M24 8L16 3.5V12.5Z" fill="var(--ink-2)"/></svg>Body facing (shorter = less engaged)</li>
+            <li><svg viewBox="0 0 26 16"><path d="M2 14L24 2A22 22 0 0 1 24 14Z" fill="var(--ink-2)" fill-opacity="0.18"/></svg>Easy head-turn range</li>
+            <li><svg viewBox="0 0 26 16"><rect x="1" y="2" width="24" height="12" rx="6" fill="var(--heat-2)" fill-opacity="0.55"/></svg>Heat: where attention piles up</li>
+            <li><svg viewBox="0 0 26 16"><circle cx="13" cy="8" r="6.5" fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-dasharray="3 2.5"/></svg>Reach: overlapping circles are in range</li>
+            <li><svg viewBox="0 0 26 16"><circle cx="13" cy="8" r="5.5" fill="none" stroke="var(--g1)" stroke-width="2" stroke-dasharray="3 2"/><path d="M10 8H16M13 5V11" stroke="var(--g1)" stroke-width="1.4"/></svg>Huddle centre of a predicted group</li>
+            <li><svg viewBox="0 0 26 16"><circle cx="13" cy="8" r="7" fill="none" stroke="var(--risk)" stroke-width="1.6" stroke-dasharray="2.5 2"/><circle cx="13" cy="8" r="4" fill="var(--ink-2)"/></svg>Red ring: sidelined 30%+</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="matrix" aria-labelledby="matrix-h">
+        <div class="sec-head">
+          <div>
+            <h2 id="matrix-h">Who ends up together</h2>
+            <p class="sub">Chance each pair lands in the same conversation, summed over every split.</p>
+          </div>
+        </div>
+        <div class="mx-wrap" id="matrix-body"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section id="controls" aria-labelledby="controls-h">
+        <div class="sec-head"><h2 id="controls-h">Set the room</h2></div>
+        <div class="ctl">
+          <div class="row">
+            <span class="lbl">People</span>
+            <div class="seg num" role="group" aria-label="Number of people">
+              <button type="button" data-n="4" aria-pressed="false">4</button>
+              <button type="button" data-n="5" aria-pressed="false">5</button>
+              <button type="button" data-n="6" aria-pressed="false">6</button>
+              <button type="button" data-n="7" aria-pressed="false">7</button>
+              <button type="button" data-n="8" aria-pressed="false">8</button>
+            </div>
+            <span class="note" id="people-note" aria-live="polite"></span>
+          </div>
+          <div class="row">
+            <span class="lbl">Everyone</span>
+            <div class="seg" role="group" aria-label="Everyone's posture">
+              <button type="button" data-opt="posture" data-val="upright" aria-pressed="false">Sitting up</button>
+              <button type="button" data-opt="posture" data-val="leaning" aria-pressed="false">Leaning back</button>
+            </div>
+          </div>
+          <div class="row" id="row-seat1">
+            <span class="lbl">Seat 1</span>
+            <div class="seg" role="group" aria-label="Seat 1 posture">
+              <button type="button" data-opt="seat1" data-val="lying" aria-pressed="false">Lying down</button>
+              <button type="button" data-opt="seat1" data-val="up" aria-pressed="false">Sitting up</button>
+            </div>
+          </div>
+          <div class="row" id="row-seat6">
+            <span class="lbl">Seat 6</span>
+            <div class="seg" role="group" aria-label="Seat 6 posture">
+              <button type="button" data-opt="seat6" data-val="perched" aria-pressed="false">Perched, looking in</button>
+              <button type="button" data-opt="seat6" data-val="back" aria-pressed="false">Sitting back</button>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">Show</span>
+            <div class="chips" role="group" aria-label="Plan layers">
+              <button type="button" class="chip" data-layer="heat" aria-pressed="false">Heat</button>
+              <button type="button" class="chip" data-layer="reach" aria-pressed="false">Reach circles</button>
+              <button type="button" class="chip" data-layer="links" aria-pressed="false">Links</button>
+            </div>
+          </div>
+          <details class="knobs">
+            <summary>Model knobs</summary>
+            <div class="knob-grid" id="knobs"></div>
+            <button type="button" class="link-btn" id="knob-reset">Reset knobs</button>
+          </details>
+        </div>
+      </section>
+
+      <section id="readout" aria-labelledby="readout-h">
+        <div class="sec-head"><h2 id="readout-h">Read-out</h2></div>
+        <ul class="read" id="readout-body" aria-live="polite"></ul>
+      </section>
+
+      <section id="splits" aria-labelledby="splits-h">
+        <div class="sec-head">
+          <div>
+            <h2 id="splits-h">Likeliest splits</h2>
+            <p class="sub" id="split-sub"></p>
+          </div>
+        </div>
+        <ol class="split-list" id="split-list"></ol>
+        <p class="split-foot" id="split-foot"></p>
+      </section>
+    </div>
+
+    <section id="seats" aria-labelledby="seats-h">
+      <div class="sec-head">
+        <div>
+          <h2 id="seats-h">Seat report</h2>
+          <p class="sub">Involvement is your slice of all the listening in the room; the tick marks a fair share. Sidelined is how far below a fair share of airtime you land on average, with being alone counted as 100%. Group odds are measured against the split selected above.</p>
+        </div>
+      </div>
+      <div class="seat-legend" id="seat-legend"></div>
+      <div class="seat-table" role="table" aria-label="Seat report">
+        <div class="seat-head" role="row">
+          <span role="columnheader">Seat</span>
+          <span role="columnheader">Involvement</span>
+          <span role="columnheader">Sidelined</span>
+          <span role="columnheader">Group odds</span>
+          <span role="columnheader">Usually with</span>
+        </div>
+        <div id="seat-rows"></div>
+      </div>
+    </section>
+
+    <section id="maths" class="maths" aria-labelledby="maths-h">
+      <h2 id="maths-h">How the model works</h2>
+      <p class="sub">Positions are in centimetres from the sofa's back-left corner. Weights are hand-set guesses grounded in the research below, not fitted to data.</p>
+      <ol class="steps">
+        <li>
+          <h3>Link every pair</h3>
+          <p>How well two people can talk depends on how far each has to turn, how far apart they are, whether someone is in the way, and posture.</p>
+          <span class="eq">w<sub>ij</sub> = √(a<sub>ij</sub>·a<sub>ji</sub>) · e<sup>−(d/R)²</sup> · s<sub>ij</sub> · √(e<sub>i</sub>e<sub>j</sub>)</span>
+          <p><span class="mono">a<sub>ij</sub> = e<sup>κ(cos θ − 1)</sup></span>, where θ is how far off their body line the other person sits. Posture sets engagement <span class="mono">e</span> (lying 0.55, boxed-in corner 0.80, perched 1.10) and head-turn stiffness <span class="mono">κ</span>. Anyone seated within 22 cm of the line between two people cuts the link by up to 55%, or 85% for the boxed-in corner, who can't lean forward to see past.</p>
+        </li>
+        <li>
+          <h3>Rank who holds the floor</h3>
+          <p>Inside a conversation of k people, your odds of ranking higher grow with how squarely the others face you. All k! speaking orders are summed exactly (Plackett–Luce), and rank m gets this share of the airtime:</p>
+          <span class="eq">share(m) = r<sup>m−1</sup> / (1 + r + … + r<sup>k−1</sup>)</span>
+        </li>
+        <li>
+          <h3>Score each person's payoff</h3>
+          <p>Your average link to the group, times a size term that makes bigger groups livelier until a crowd penalty past four kicks in, times diminishing returns on airtime. Being alone is worth 0.06.</p>
+          <span class="eq">U<sub>i</sub> = Ā<sub>i</sub> · (k−1)<sup>α</sup>e<sup>−λ·max(0, k−4)</sup> · (½ + ½·E[√(k·share)])</span>
+        </li>
+        <li>
+          <h3>Weigh every split</h3>
+          <p>Each way of dividing the room is weighted by its total payoff. Splits are set partitions, so there are Bell-number many: 15, 52, 203, 877 and 4,140 for 4 to 8 people. Permutations only come in for speaking order.</p>
+          <span class="eq">P(split) ∝ exp(Σ U<sub>i</sub> / T)</span>
+          <p>This is a Boltzmann distribution, so its normaliser is a partition function summed over partitions.</p>
+        </li>
+      </ol>
+      <p class="sources"><b>Grounding:</b> Kendon (1990) on F-formations and the shared o-space a group faces into; Hall (1966) on proxemic distances; Sommer (1959) on people choosing right-angle corner seats for conversation; Steinzor (1950) and Howells &amp; Becker (1962) on seating sightlines deciding who talks and leads; Stephan &amp; Mishler (1952) on geometric decay of participation by rank; Dunbar, Duncan &amp; Nettle (1995) on conversations splitting past four; Luce (1959) and Plackett (1975) on ranking models.</p>
+    </section>
+  </main>
+</div>
+
+<script>(function (root) {
+  'use strict';
+
+  var SPOT_IDS = ['1', '2', '3', '4', '5', '6', 'F', 'C'];
+  var FILL_ORDER = ['1', '4', '2', '6', '3', '5', 'F', 'C'];
+  var BELL = [1, 1, 2, 5, 15, 52, 203, 877, 4140];
+
+  var DEFAULTS = {
+    R: 220,
+    r: 0.7,
+    alpha: 0.2,
+    lambda: 0.35,
+    T: 0.1,
+    u0: 0.06,
+    beta: 4,
+    D: 75
+  };
+
+  // Value of a conversation's size: livelier with more people (diminishing returns),
+  // then a crowd penalty past four (Dunbar's conversation cap).
+  function sizeValue(k, prm) {
+    return Math.pow(k - 1, prm.alpha) * Math.exp(-prm.lambda * Math.max(0, k - 4));
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function popcount(m) { var c = 0; while (m) { m &= m - 1; c++; } return c; }
+
+  // Where each person's head sits (cm, origin = sofa's outer back-left corner),
+  // which way their body faces (degrees, 0 = east, 90 = toward the room's open end),
+  // how stiff their head-turn is (kappa), how engaged their posture is (e),
+  // and how big an obstacle they are to other people's sightlines (rho, cm).
+  function spotState(id, cfg, occ) {
+    var up = cfg.posture === 'upright';
+    var seated = up ? 'Upright' : 'Leaning back';
+    switch (id) {
+      case '1':
+        if (cfg.seat1 === 'lying') {
+          return { x: 58, y: 62, ang: 80, kappa: 1.6, e: 0.55, rho: 0, pose: 'Lying back' };
+        }
+        return { x: 65, y: up ? 75 : 52, ang: 90, kappa: 1.1, e: up ? 1 : 0.95, rho: 22, pose: up ? 'Sitting up' : 'Leaning back' };
+      case '2':
+        return { x: 155, y: up ? 75 : 50, ang: 90, kappa: 1.1, e: up ? 1 : 0.95, rho: 22, pose: seated };
+      case '3':
+        return { x: 245, y: up ? 75 : 50, ang: 90, kappa: 1.1, e: up ? 1 : 0.95, rho: 22, pose: seated };
+      case '4': {
+        var nb = up ? (occ['3'] ? 1 : 0) + (occ['5'] ? 1 : 0) : 0;
+        var t = nb / 2;
+        return {
+          x: lerp(330, 352, t), y: lerp(80, 58, t), ang: 135,
+          kappa: lerp(0.8, 1.4, t), e: lerp(1.05, 0.8, t), rho: 22, boxed: nb,
+          pose: nb === 2 ? 'Boxed in, no leg room' : nb === 1 ? 'Half boxed in' : 'Open corner'
+        };
+      }
+      case '5':
+        return { x: up ? 335 : 360, y: 157, ang: 180, kappa: 1.1, e: up ? 1 : 0.95, rho: 22, pose: seated };
+      case '6':
+        if (cfg.seat6 === 'perched') {
+          return { x: 318, y: 240, ang: 215, kappa: 0.9, e: 1.1, rho: 22, pose: 'Perched, looking in' };
+        }
+        return { x: up ? 335 : 360, y: 242, ang: 180, kappa: 1.1, e: up ? 1 : 0.95, rho: 22, pose: seated };
+      case 'F':
+        return { x: 195, y: 190, ang: 290, kappa: 1.0, e: 0.85, rho: 0, pose: 'Low, facing the back row' };
+      case 'C':
+        return { x: 200, y: 335, ang: 270, kappa: 1.1, e: 1.0, rho: 22, pose: 'Outside the U, facing in' };
+    }
+    return null;
+  }
+
+  function buildPeople(cfg) {
+    var occ = {};
+    cfg.occupied.forEach(function (id) { occ[id] = true; });
+    var people = [];
+    SPOT_IDS.forEach(function (id) {
+      if (!occ[id]) return;
+      var s = spotState(id, cfg, occ);
+      var rad = s.ang * Math.PI / 180;
+      s.id = id;
+      s.fx = Math.cos(rad);
+      s.fy = Math.sin(rad);
+      s.boxed = s.boxed || 0;
+      people.push(s);
+    });
+    return people;
+  }
+
+  function matrix(n, v) {
+    var m = [];
+    for (var i = 0; i < n; i++) { m.push(new Array(n).fill(v)); }
+    return m;
+  }
+
+  // Pairwise link strength: mutual facing x distance x line of sight x posture.
+  function computeLinks(P, prm) {
+    var n = P.length;
+    var look = matrix(n, 0), O = matrix(n, 1), K = matrix(n, 1), W = matrix(n, 0), D = matrix(n, 0);
+    var i, j, k;
+    for (i = 0; i < n; i++) {
+      for (j = 0; j < n; j++) {
+        if (i === j) continue;
+        var dx = P[j].x - P[i].x, dy = P[j].y - P[i].y, d = Math.hypot(dx, dy);
+        var c = (P[i].fx * dx + P[i].fy * dy) / d;
+        look[i][j] = Math.exp(P[i].kappa * (c - 1));
+        D[i][j] = d;
+      }
+    }
+    for (i = 0; i < n; i++) {
+      for (j = i + 1; j < n; j++) {
+        var ex = P[j].x - P[i].x, ey = P[j].y - P[i].y, dd = ex * ex + ey * ey;
+        var s = 0.55 + 0.15 * Math.max(P[i].boxed, P[j].boxed);
+        var o = 1;
+        for (k = 0; k < n; k++) {
+          if (k === i || k === j || P[k].rho <= 0) continue;
+          var t = ((P[k].x - P[i].x) * ex + (P[k].y - P[i].y) * ey) / dd;
+          if (t <= 0.08 || t >= 0.92) continue;
+          var perp = Math.hypot(P[k].x - (P[i].x + t * ex), P[k].y - (P[i].y + t * ey));
+          var ov = Math.max(0, 1 - perp / P[k].rho);
+          o *= 1 - s * ov;
+        }
+        var kk = Math.exp(-Math.pow(D[i][j] / prm.R, 2));
+        O[i][j] = O[j][i] = o;
+        K[i][j] = K[j][i] = kk;
+        W[i][j] = W[j][i] = Math.sqrt(look[i][j] * look[j][i]) * kk * o * Math.sqrt(P[i].e * P[j].e);
+      }
+    }
+    return { look: look, O: O, K: K, W: W, D: D };
+  }
+
+  function shareTable(r, kmax) {
+    var tab = [];
+    for (var k = 0; k <= kmax; k++) {
+      var row = [], tot = 0, p;
+      for (p = 0; p < k; p++) tot += Math.pow(r, p);
+      for (p = 0; p < k; p++) row.push(Math.pow(r, p) / tot);
+      tab.push(row);
+    }
+    return tab;
+  }
+
+  // Plackett-Luce rank distribution by dynamic programming over "who is still unranked".
+  // Equivalent to summing over all k! speaking orders.
+  function rankDist(v) {
+    var k = v.length, full = (1 << k) - 1;
+    var prob = new Float64Array(full + 1);
+    var P = [];
+    for (var a = 0; a < k; a++) P.push(new Float64Array(k));
+    prob[full] = 1;
+    for (var mask = full; mask > 0; mask--) {
+      var pm = prob[mask];
+      if (pm === 0) continue;
+      var pos = k - popcount(mask), sum = 0, j;
+      for (j = 0; j < k; j++) if (mask & (1 << j)) sum += v[j];
+      for (j = 0; j < k; j++) {
+        if (!(mask & (1 << j))) continue;
+        var q = pm * v[j] / sum;
+        P[j][pos] += q;
+        prob[mask ^ (1 << j)] += q;
+      }
+    }
+    return P;
+  }
+
+  function evalSubsets(P, L, prm) {
+    var n = P.length, N = 1 << n;
+    var shares = shareTable(prm.r, n);
+    var sub = new Array(N);
+    for (var mask = 1; mask < N; mask++) {
+      var mem = [];
+      for (var i = 0; i < n; i++) if (mask & (1 << i)) mem.push(i);
+      var k = mem.length;
+      if (k === 1) {
+        sub[mask] = { members: mem, total: prm.u0, U: [prm.u0], A: [0], sigma: [0], short: [1], plast: [0], pfirst: [1], rank: null };
+        continue;
+      }
+      var A = [], z = [], v = [], a, b;
+      for (a = 0; a < k; a++) {
+        var ia = mem[a], sa = 0, za = 0;
+        for (b = 0; b < k; b++) {
+          if (a === b) continue;
+          var ib = mem[b];
+          sa += L.W[ia][ib];
+          za += L.look[ib][ia] * L.O[ia][ib] * Math.sqrt(L.K[ia][ib]);
+        }
+        A.push(sa / (k - 1));
+        z.push(P[ia].e * za / (k - 1));
+        v.push(Math.exp(prm.beta * P[ia].e * za / (k - 1)));
+      }
+      var R = rankDist(v);
+      var size = sizeValue(k, prm);
+      var U = [], sigma = [], short = [], plast = [], pfirst = [], total = 0;
+      for (a = 0; a < k; a++) {
+        var sg = 0, sq = 0, sh = 0;
+        for (var p = 0; p < k; p++) {
+          sg += R[a][p] * shares[k][p];
+          sq += R[a][p] * Math.sqrt(k * shares[k][p]);
+          sh += R[a][p] * Math.max(0, 1 - k * shares[k][p]);
+        }
+        var u = A[a] * size * (0.5 + 0.5 * sq);
+        U.push(u); sigma.push(sg); short.push(sh); plast.push(R[a][k - 1]); pfirst.push(R[a][0]);
+        total += u;
+      }
+      sub[mask] = { members: mem, total: total, U: U, A: A, z: z, sigma: sigma, short: short, plast: plast, pfirst: pfirst, rank: R };
+    }
+    return sub;
+  }
+
+  var partCache = {};
+  function partitions(n) {
+    if (partCache[n]) return partCache[n];
+    var out = [], blocks = [];
+    (function rec(i) {
+      if (i === n) { out.push(blocks.slice()); return; }
+      for (var b = 0; b < blocks.length; b++) {
+        blocks[b] |= 1 << i; rec(i + 1); blocks[b] &= ~(1 << i);
+      }
+      blocks.push(1 << i); rec(i + 1); blocks.pop();
+    })(0);
+    partCache[n] = out;
+    return out;
+  }
+
+  function solve(cfg, prmIn) {
+    var prm = Object.assign({}, DEFAULTS, prmIn || {});
+    var P = buildPeople(cfg);
+    var n = P.length;
+    var L = computeLinks(P, prm);
+    var sub = evalSubsets(P, L, prm);
+    var parts = partitions(n);
+    var scores = new Float64Array(parts.length), maxS = -Infinity, pi, b;
+    for (pi = 0; pi < parts.length; pi++) {
+      var s = 0;
+      for (b = 0; b < parts[pi].length; b++) s += sub[parts[pi][b]].total;
+      scores[pi] = s;
+      if (s > maxS) maxS = s;
+    }
+    var probs = new Float64Array(parts.length), Z = 0;
+    for (pi = 0; pi < parts.length; pi++) { probs[pi] = Math.exp((scores[pi] - maxS) / prm.T); Z += probs[pi]; }
+    for (pi = 0; pi < parts.length; pi++) probs[pi] /= Z;
+
+    var order = Array.from(parts.keys()).sort(function (x, y) { return probs[y] - probs[x]; });
+
+    var M = matrix(n, 0);
+    var psolo = new Array(n).fill(0), ear = new Array(n).fill(0), fade = new Array(n).fill(0);
+    var esize = new Array(n).fill(0), air = new Array(n).fill(0), plastBig = new Array(n).fill(0);
+    var pfirst = new Array(n).fill(0);
+    for (pi = 0; pi < parts.length; pi++) {
+      var p = probs[pi], bl = parts[pi], listeners = n - bl.length;
+      for (b = 0; b < bl.length; b++) {
+        var info = sub[bl[b]], k = info.members.length;
+        for (var a = 0; a < k; a++) {
+          var i = info.members[a];
+          esize[i] += p * k;
+          fade[i] += p * info.short[a];
+          if (k === 1) { psolo[i] += p; continue; }
+          air[i] += p * info.sigma[a];
+          pfirst[i] += p * info.pfirst[a];
+          if (listeners > 0) ear[i] += p * info.sigma[a] * (k - 1) / listeners;
+          if (k >= 3) plastBig[i] += p * info.plast[a];
+          for (var c = 0; c < k; c++) if (c !== a) M[i][info.members[c]] += p;
+        }
+      }
+    }
+
+    return {
+      prm: prm, people: P, n: n, links: L, sub: sub, parts: parts, probs: probs, order: order,
+      M: M, psolo: psolo, ear: ear, fade: fade, esize: esize, air: air, plastBig: plastBig, pfirst: pfirst,
+      bell: BELL[n]
+    };
+  }
+
+  // Probability that each person ends up in each group of a reference split.
+  // A person's conversation is credited to reference groups in proportion to
+  // how many of their conversation partners belong to each group.
+  function membership(res, ref) {
+    var n = res.n, G = ref.length, out = [], i;
+    for (i = 0; i < n; i++) out.push(new Array(G + 2).fill(0));
+    for (var pi = 0; pi < res.parts.length; pi++) {
+      var p = res.probs[pi], bl = res.parts[pi];
+      if (bl.length === 1 && G > 1 && n > 1) {
+        for (i = 0; i < n; i++) out[i][G + 1] += p;
+        continue;
+      }
+      for (var b = 0; b < bl.length; b++) {
+        var B = bl[b];
+        for (i = 0; i < n; i++) {
+          if (!(B & (1 << i))) continue;
+          var others = B & ~(1 << i), cnt = popcount(others);
+          if (cnt === 0) { out[i][G] += p; continue; }
+          for (var g = 0; g < G; g++) {
+            var ov = popcount(others & ref[g]);
+            if (ov) out[i][g] += p * ov / cnt;
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  var api = {
+    SPOT_IDS: SPOT_IDS, FILL_ORDER: FILL_ORDER, DEFAULTS: DEFAULTS, BELL: BELL,
+    spotState: spotState, buildPeople: buildPeople, computeLinks: computeLinks,
+    rankDist: rankDist, partitions: partitions, solve: solve, membership: membership,
+    popcount: popcount, shareTable: shareTable, sizeValue: sizeValue
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.CouchModel = api;
+})(typeof window !== 'undefined' ? window : this);
+</script>
+<script>(function () {
+  'use strict';
+  var CM = window.CouchModel;
+  var VB = { x: -45, y: -45, w: 500, h: 420 };
+  var NAMES = { '1': 'chaise', '2': 'back left', '3': 'back right', '4': 'corner', '5': 'side', '6': 'arm end', F: 'floor cushion', C: 'pulled-up chair' };
+  var HIT = {
+    '1': { t: 'path', d: 'M21 25H109V284H1V115H21Z' },
+    '2': { t: 'rect', x: 111, y: 25, w: 88, h: 88 },
+    '3': { t: 'rect', x: 201, y: 25, w: 88, h: 88 },
+    '4': { t: 'rect', x: 291, y: 25, w: 96, h: 88 },
+    '5': { t: 'rect', x: 291, y: 115, w: 96, h: 83 },
+    '6': { t: 'rect', x: 291, y: 200, w: 96, h: 84 },
+    F: { t: 'circle', cx: 195, cy: 190, r: 30 },
+    C: { t: 'rect', x: 175, y: 312, w: 50, h: 52 }
+  };
+  var KNOBS = [
+    { key: 'R', label: 'Reach radius R', min: 120, max: 360, step: 10, fmt: function (v) { return v + ' cm'; }, note: 'Distance where a link fades to 37%.' },
+    { key: 'r', label: 'Speaking decay r', min: 0.4, max: 0.95, step: 0.05, fmt: function (v) { return v.toFixed(2); }, note: 'Each rank down speaks r times as much.' },
+    { key: 'alpha', label: 'Bigger-group pull α', min: 0, max: 0.6, step: 0.05, fmt: function (v) { return v.toFixed(2); }, note: 'How much livelier a bigger conversation feels.' },
+    { key: 'lambda', label: 'Crowd penalty λ', min: 0, max: 1, step: 0.05, fmt: function (v) { return v.toFixed(2); }, note: 'Penalty for each person past four.' },
+    { key: 'T', label: 'Randomness T', min: 0.03, max: 0.3, step: 0.01, fmt: function (v) { return v.toFixed(2); }, note: 'Low: the best split nearly always wins.' }
+  ];
+  var MAX_SPLITS = 8;
+  var DEFAULT_CFG = { occupied: CM.FILL_ORDER.slice(0, 6), posture: 'upright', seat1: 'lying', seat6: 'perched' };
+
+  var state = {
+    cfg: JSON.parse(JSON.stringify(DEFAULT_CFG)),
+    prm: Object.assign({}, CM.DEFAULTS),
+    layers: { heat: true, reach: true, links: false },
+    sel: 0,
+    res: null,
+    focus: null
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var els = {
+    heat: $('plan-heat'), top: $('plan-top'), peopleNote: $('people-note'), readout: $('readout-body'),
+    splitList: $('split-list'), splitSub: $('split-sub'), splitFoot: $('split-foot'),
+    seatRows: $('seat-rows'), seatLegend: $('seat-legend'), matrix: $('matrix-body'), knobs: $('knobs')
+  };
+
+  var pc = CM.popcount;
+  function f1(v) { return Math.round(v * 10) / 10; }
+  function pct(x) { var v = x * 100; return (v > 0 && v < 1 ? '<1' : Math.round(v)) + '%'; }
+  function lowBit(m) { return m & -m; }
+  function idsOf(m) { return state.res.people.filter(function (_, i) { return m & (1 << i); }).map(function (p) { return p.id; }); }
+  function seatLabel(id) { return /\d/.test(id) ? 'Seat ' + id : (id === 'F' ? 'The floor spot' : 'The chair'); }
+  function seatShort(id) { return /\d/.test(id) ? id : id === 'F' ? 'F (floor)' : 'C (chair)'; }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function argmax(a) { var b = 0; for (var i = 1; i < a.length; i++) if (a[i] > a[b]) b = i; return b; }
+  function currentSplit() { var r = state.res; return r.parts[r.order[Math.min(state.sel, r.order.length - 1)]]; }
+
+  function sortGroups(split) {
+    return split.slice().sort(function (a, b) { return pc(b) - pc(a) || lowBit(a) - lowBit(b); });
+  }
+  function colourMap(split) {
+    var map = new Map(), c = 0;
+    sortGroups(split).forEach(function (m) { map.set(m, pc(m) > 1 ? (c++ % 4) + 1 : 0); });
+    return map;
+  }
+  function colourOf(split, cmap, i) {
+    for (var k = 0; k < split.length; k++) if (split[k] & (1 << i)) return cmap.get(split[k]);
+    return 0;
+  }
+
+  /* ---------- Plan: heat ---------- */
+  function hexToRgb(h) {
+    h = (h || '').trim().replace('#', '');
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+    var v = parseInt(h, 16);
+    if (isNaN(v)) return [230, 120, 40];
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+  }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+
+  function drawHeat() {
+    var cv = els.heat, W = 250, H = 210, ctx = cv.getContext('2d');
+    if (cv.width !== W) { cv.width = W; cv.height = H; }
+    ctx.clearRect(0, 0, W, H);
+    if (!state.layers.heat || !state.res) return;
+    var cs = getComputedStyle(document.documentElement);
+    var c1 = hexToRgb(cs.getPropertyValue('--heat-1')), c2 = hexToRgb(cs.getPropertyValue('--heat-2')), c3 = hexToRgb(cs.getPropertyValue('--heat-3'));
+    var P = state.res.people, r0 = 0.45 * state.prm.R;
+    var vals = new Float32Array(W * H), max = 0, k = 0, sx = VB.w / W, sy = VB.h / H;
+    for (var py = 0; py < H; py++) {
+      var y = VB.y + (py + 0.5) * sy;
+      for (var px = 0; px < W; px++, k++) {
+        var x = VB.x + (px + 0.5) * sx, v = 0;
+        for (var i = 0; i < P.length; i++) {
+          var p = P[i], dx = x - p.x, dy = y - p.y, r = Math.sqrt(dx * dx + dy * dy);
+          if (r < 1) continue;
+          var c = (p.fx * dx + p.fy * dy) / r, u = r / r0;
+          v += p.e * Math.exp(p.kappa * (c - 1)) * u * u * Math.exp(1 - u * u);
+        }
+        vals[k] = v;
+        if (v > max) max = v;
+      }
+    }
+    var scale = Math.max(max, 2.4), img = ctx.createImageData(W, H), d = img.data;
+    for (k = 0; k < W * H; k++) {
+      var t = vals[k] / scale, rgb, a;
+      if (t < 0.14) continue;
+      if (t < 0.5) { rgb = c1; a = 0.5 * (t - 0.14) / 0.36; }
+      else if (t < 0.78) { var u2 = (t - 0.5) / 0.28; rgb = mix(c1, c2, u2); a = 0.5 + 0.12 * u2; }
+      else { var u3 = Math.min(1, (t - 0.78) / 0.22); rgb = mix(c2, c3, u3); a = 0.62 + 0.12 * u3; }
+      d[k * 4] = rgb[0]; d[k * 4 + 1] = rgb[1]; d[k * 4 + 2] = rgb[2]; d[k * 4 + 3] = Math.round(a * 255);
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  /* ---------- Plan: vectors, circles, people ---------- */
+  function wedgePath(p, R) {
+    var c = 1 + Math.log(0.5) / p.kappa, half = c <= -1 ? Math.PI * 0.999 : Math.acos(c);
+    var a = Math.atan2(p.fy, p.fx);
+    var x1 = p.x + R * Math.cos(a - half), y1 = p.y + R * Math.sin(a - half);
+    var x2 = p.x + R * Math.cos(a + half), y2 = p.y + R * Math.sin(a + half);
+    return 'M' + f1(p.x) + ' ' + f1(p.y) + 'L' + f1(x1) + ' ' + f1(y1) + 'A' + R + ' ' + R + ' 0 ' + (2 * half > Math.PI ? 1 : 0) + ' 1 ' + f1(x2) + ' ' + f1(y2) + 'Z';
+  }
+  function arrowMarkup(p, cls) {
+    var L = 26 + 52 * p.e, s = 20;
+    var x0 = p.x + p.fx * s, y0 = p.y + p.fy * s, x1 = p.x + p.fx * (s + L), y1 = p.y + p.fy * (s + L);
+    var hx = x1 + p.fx * 13, hy = y1 + p.fy * 13, nx = -p.fy, ny = p.fx;
+    return '<g class="c' + cls + '"><line x1="' + f1(x0) + '" y1="' + f1(y0) + '" x2="' + f1(x1) + '" y2="' + f1(y1) + '"/>' +
+      '<path d="M' + f1(hx) + ' ' + f1(hy) + 'L' + f1(x1 + nx * 7.5) + ' ' + f1(y1 + ny * 7.5) + 'L' + f1(x1 - nx * 7.5) + ' ' + f1(y1 - ny * 7.5) + 'Z"/></g>';
+  }
+
+  function drawTop() {
+    var res = state.res, P = res.people, n = res.n, prm = state.prm;
+    var split = currentSplit(), cmap = colourMap(split);
+    var col = P.map(function (_, i) { return colourOf(split, cmap, i); });
+    var occ = {};
+    state.cfg.occupied.forEach(function (id) { occ[id] = true; });
+    var h = [], i, j;
+
+    CM.SPOT_IDS.forEach(function (id) {
+      var a = HIT[id], on = !!occ[id];
+      var lbl = seatLabel(id) + ', ' + NAMES[id] + ', ' + (on ? 'occupied. Press to remove this person.' : 'empty. Press to seat someone here.');
+      var shape = a.t === 'rect' ? '<rect x="' + a.x + '" y="' + a.y + '" width="' + a.w + '" height="' + a.h + '" rx="5"/>'
+        : a.t === 'circle' ? '<circle cx="' + a.cx + '" cy="' + a.cy + '" r="' + a.r + '"/>'
+        : '<path d="' + a.d + '"/>';
+      h.push('<g class="hit" data-seat="' + id + '" role="button" tabindex="0" aria-label="' + lbl + '">' + shape + '</g>');
+    });
+
+    if (state.layers.reach) {
+      h.push('<g class="reach">');
+      P.forEach(function (p, i) { h.push('<circle class="c' + col[i] + '" cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="' + prm.R / 2 + '"/>'); });
+      h.push('</g>');
+    }
+
+    var W = res.links.W, wmax = 1e-9;
+    for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) wmax = Math.max(wmax, W[i][j]);
+    h.push('<g class="links' + (state.layers.links ? ' show' : '') + '">');
+    for (i = 0; i < n; i++) {
+      for (j = i + 1; j < n; j++) {
+        var w = W[i][j];
+        if (w < 0.05) continue;
+        var same = col[i] > 0 && col[i] === col[j];
+        h.push('<line class="lk ' + (same ? 'c' + col[i] : 'x') + '" data-a="' + i + '" data-b="' + j + '" x1="' + f1(P[i].x) + '" y1="' + f1(P[i].y) + '" x2="' + f1(P[j].x) + '" y2="' + f1(P[j].y) +
+          '" stroke-width="' + (0.8 + 11 * w).toFixed(1) + '" stroke-opacity="' + (0.25 + 0.7 * w / wmax).toFixed(2) + '"/>');
+      }
+    }
+    h.push('</g>');
+
+    h.push('<g class="wedges">');
+    P.forEach(function (p, i) { h.push('<path class="c' + col[i] + '" d="' + wedgePath(p, 64) + '"/>'); });
+    h.push('</g>');
+
+    sortGroups(split).forEach(function (m) {
+      if (pc(m) < 2) return;
+      var cls = cmap.get(m), cx = 0, cy = 0, cnt = 0, ties = '';
+      P.forEach(function (p, i) { if (m & (1 << i)) { cx += p.x + prm.D * p.fx; cy += p.y + prm.D * p.fy; cnt++; } });
+      cx /= cnt; cy /= cnt;
+      P.forEach(function (p, i) { if (m & (1 << i)) ties += '<line class="tie" x1="' + f1(p.x) + '" y1="' + f1(p.y) + '" x2="' + f1(cx) + '" y2="' + f1(cy) + '"/>'; });
+      h.push('<g class="osp c' + cls + '">' + ties + '<circle cx="' + f1(cx) + '" cy="' + f1(cy) + '" r="14"/><path d="M' + f1(cx - 7) + ' ' + f1(cy) + 'H' + f1(cx + 7) + 'M' + f1(cx) + ' ' + f1(cy - 7) + 'V' + f1(cy + 7) + '"/></g>');
+    });
+
+    h.push('<g class="arrows">');
+    P.forEach(function (p, i) { h.push(arrowMarkup(p, col[i])); });
+    h.push('</g>');
+
+    P.forEach(function (p, i) {
+      var tip = seatLabel(p.id) + ' (' + NAMES[p.id] + '): ' + p.pose + '. Involvement ' + pct(res.ear[i]) + ', sidelined ' + pct(res.fade[i]) + ', alone ' + pct(res.psolo[i]) + '.';
+      var g = '<g class="person c' + col[i] + '" data-person="' + i + '" data-seat="' + p.id + '"><title>' + tip + '</title>';
+      if (p.id === '1' && state.cfg.seat1 === 'lying') g += '<line class="body" x1="58" y1="86" x2="57" y2="250"/>';
+      if (res.fade[i] >= 0.3) g += '<circle class="risk-ring" cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="24"/>';
+      g += '<circle class="head" cx="' + f1(p.x) + '" cy="' + f1(p.y) + '" r="17"/><text x="' + f1(p.x) + '" y="' + f1(p.y) + '">' + p.id + '</text></g>';
+      h.push(g);
+    });
+
+    CM.SPOT_IDS.forEach(function (id) {
+      if (occ[id]) return;
+      var s = CM.spotState(id, state.cfg, occ);
+      h.push('<g class="empty"><circle cx="' + f1(s.x) + '" cy="' + f1(s.y) + '" r="11"/><path d="M' + f1(s.x - 5) + ' ' + f1(s.y) + 'H' + f1(s.x + 5) + 'M' + f1(s.x) + ' ' + f1(s.y - 5) + 'V' + f1(s.y + 5) + '"/></g>');
+    });
+
+    els.top.innerHTML = h.join('');
+    applyFocus();
+  }
+
+  function applyFocus() {
+    var f = state.focus, top = els.top;
+    top.classList.toggle('focus', f !== null);
+    top.querySelectorAll('.lk').forEach(function (l) { l.classList.toggle('on', f !== null && (+l.dataset.a === f || +l.dataset.b === f)); });
+    top.querySelectorAll('.person').forEach(function (g) { g.classList.toggle('on', +g.dataset.person === f); });
+  }
+  function setFocus(i) {
+    if (state.focus === i) return;
+    state.focus = i;
+    applyFocus();
+  }
+
+  /* ---------- Controls ---------- */
+  function buildKnobs() {
+    els.knobs.innerHTML = KNOBS.map(function (k) {
+      return '<div class="knob"><label for="k-' + k.key + '">' + k.label + '</label><output id="o-' + k.key + '" for="k-' + k.key + '"></output>' +
+        '<input type="range" id="k-' + k.key + '" data-key="' + k.key + '" min="' + k.min + '" max="' + k.max + '" step="' + k.step + '">' +
+        '<small>' + k.note + '</small></div>';
+    }).join('');
+  }
+  function renderControls() {
+    var count = state.cfg.occupied.length;
+    document.querySelectorAll('[data-n]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.n === count)); });
+    document.querySelectorAll('[data-opt]').forEach(function (b) { b.setAttribute('aria-pressed', String(state.cfg[b.dataset.opt] === b.dataset.val)); });
+    document.querySelectorAll('[data-layer]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!state.layers[b.dataset.layer])); });
+    $('row-seat1').classList.toggle('muted', state.cfg.occupied.indexOf('1') < 0);
+    $('row-seat6').classList.toggle('muted', state.cfg.occupied.indexOf('6') < 0);
+    if (!els.peopleNote.classList.contains('flash')) els.peopleNote.textContent = count + ' seated' + (count < 4 ? ' (tap seats to add)' : '');
+    KNOBS.forEach(function (k) {
+      var inp = $('k-' + k.key), v = state.prm[k.key];
+      if (+inp.value !== v) inp.value = v;
+      $('o-' + k.key).textContent = k.fmt(v);
+    });
+  }
+  var flashTimer = null;
+  function flash(msg) {
+    els.peopleNote.textContent = msg;
+    els.peopleNote.classList.add('flash');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { els.peopleNote.classList.remove('flash'); renderControls(); }, 2200);
+  }
+
+  /* ---------- Read-out ---------- */
+  function renderReadout() {
+    var res = state.res, P = res.people, n = res.n, out = [];
+    var iInv = argmax(res.ear), iRisk = argmax(res.fade);
+    var pInv = P[iInv], pRisk = P[iRisk];
+    out.push('<li><span class="k">Most involved</span><span><b>' + seatLabel(pInv.id) + '</b> (' + NAMES[pInv.id] + ') gets <b class="mono">' + pct(res.ear[iInv]) + '</b> of all the listening in the room. A fair share is <span class="mono">' + pct(1 / n) + '</span>.</span></li>');
+
+    var why = '';
+    if (pRisk.id === '4' && pRisk.boxed === 2) why = ' Seats 3 and 5 sit forward, so the corner has no leg room and their shoulders block its view.';
+    else if (pRisk.id === '4' && pRisk.boxed === 1) why = ' One neighbour sits forward, which half-boxes the corner in.';
+    else if (pRisk.id === '1' && state.cfg.seat1 === 'lying') why = ' Lying back keeps them low, turned down the chaise and slow to join in.';
+    else if (pRisk.id === 'C') why = ' The pulled-up chair sits outside the U, far from the back row.';
+    else if (pRisk.id === '6' && state.cfg.seat6 === 'back') why = ' Sitting back at the arm end faces them across the U at nobody in particular.';
+    out.push('<li><span class="k risk">Most at risk</span><span><b>' + seatLabel(pRisk.id) + '</b> (' + NAMES[pRisk.id] + ') is alone <b class="mono">' + pct(res.psolo[iRisk]) + '</b> of the time and sidelined <b class="mono">' + pct(res.fade[iRisk]) + '</b> overall.' + why + '</span></li>');
+
+    var bi = 0, bj = 1, bv = -1;
+    for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) if (res.M[i][j] > bv) { bv = res.M[i][j]; bi = i; bj = j; }
+    var a = P[bi].id, b = P[bj].id, pairWhy = '';
+    var occ4 = state.cfg.occupied.indexOf('4') >= 0;
+    if ((a === '3' && b === '5') && occ4) pairWhy = ' They sit at right angles around the corner and talk across seat 4.';
+    else if (a === '3' && b === '5') pairWhy = ' Right angles around the corner: the classic conversation seat.';
+    else if (a === '3' && b === '6' && state.cfg.seat6 === 'perched') pairWhy = ' Seat 6 leans in and faces straight back at seat 3 across the U.';
+    else if (b === 'F') pairWhy = ' The floor cushion sits face to face with the back row, with nobody in the way.';
+    out.push('<li><span class="k">Tightest pair</span><span><b>' + seatShort(a) + ' and ' + seatShort(b) + '</b> share a conversation <b class="mono">' + pct(bv) + '</b> of the time.' + pairWhy + '</span></li>');
+
+    var top = res.parts[res.order[0]];
+    out.push('<li><span class="k">Likeliest split</span><span>' + pillsFor(top) + ' <span class="mono">at ' + pct(res.probs[res.order[0]]) + '</span>, the best of ' + res.bell.toLocaleString() + ' possible splits.</span></li>');
+    els.readout.innerHTML = out.join('');
+  }
+
+  function pillsFor(split) {
+    var cmap = colourMap(split);
+    return '<span class="pills" style="display:inline-flex">' + sortGroups(split).map(function (m) {
+      var c = cmap.get(m), ids = idsOf(m).join(' ');
+      return '<span class="pill c' + c + '"' + (c ? '' : ' title="Alone"') + '><i></i>' + ids + (c ? '' : ' alone') + '</span>';
+    }).join('') + '</span>';
+  }
+
+  /* ---------- Splits ---------- */
+  function renderSplits() {
+    var res = state.res, n = res.n, k = Math.min(MAX_SPLITS, res.order.length);
+    var pmax = res.probs[res.order[0]], cover = 0, h = [];
+    for (var r = 0; r < k; r++) {
+      var pi = res.order[r], p = res.probs[pi];
+      cover += p;
+      var w = Math.max(2, 100 * p / pmax);
+      h.push('<li><button type="button" class="split" data-rank="' + r + '" aria-pressed="' + (r === state.sel) + '">' +
+        '<span class="rk">' + (r + 1) + '</span>' + pillsFor(res.parts[pi]).replace('style="display:inline-flex"', '') +
+        '<span class="pbar"><b>' + pct(p) + '</b><span class="pt"><i style="width:' + w.toFixed(1) + '%"></i></span></span></button></li>');
+    }
+    els.splitList.innerHTML = h.join('');
+    els.splitSub.textContent = 'Out of ' + res.bell.toLocaleString() + ' ways ' + n + ' people can split up (the Bell number B' + toSub(n) + '). Tap one to colour the plan and the seat report by its groups.';
+    els.splitFoot.textContent = 'These ' + k + ' cover ' + pct(cover) + ' of the probability.';
+  }
+  function toSub(n) { return String(n).replace(/\d/g, function (d) { return '₀₁₂₃₄₅₆₇₈₉'[+d]; }); }
+
+  /* ---------- Seat report ---------- */
+  function renderSeats() {
+    var res = state.res, P = res.people, n = res.n;
+    var ref = currentSplit(), cmap = colourMap(ref), G = ref.length;
+    var mem = CM.membership(res, ref);
+    var groups = sortGroups(ref).filter(function (m) { return pc(m) > 1; });
+    var gIndex = groups.map(function (m) { return ref.indexOf(m); });
+    var singles = []; ref.forEach(function (m, g) { if (pc(m) === 1) singles.push(g); });
+
+    var leg = groups.map(function (m) { return '<span><i class="sw c' + cmap.get(m) + '"></i>With ' + idsOf(m).join(' ') + '</span>'; });
+    if (singles.length) leg.push('<span><i class="sw other"></i>With someone alone in that split</span>');
+    leg.push('<span><i class="sw alone"></i>Alone</span>');
+    if (G > 1) leg.push('<span><i class="sw all"></i>Whole room together</span>');
+    els.seatLegend.innerHTML = leg.join('');
+
+    var maxEar = Math.max.apply(null, res.ear), scaleEar = Math.max(1.6 / n, maxEar * 1.1);
+    var rows = P.map(function (p, i) {
+      var cls = colourOf(ref, cmap, i), segs = [];
+      groups.forEach(function (m, gi) {
+        var v = mem[i][gIndex[gi]];
+        if (v > 0.004) segs.push(seg('c' + cmap.get(m), v, 'With ' + idsOf(m).join(' ')));
+      });
+      var other = 0; singles.forEach(function (g) { other += mem[i][g]; });
+      if (other > 0.004) segs.push(seg('other', other, 'With someone alone in that split'));
+      if (mem[i][G] > 0.004) segs.push(seg('alone', mem[i][G], 'Alone'));
+      if (G > 1 && mem[i][G + 1] > 0.004) segs.push(seg('all', mem[i][G + 1], 'Whole room together'));
+
+      var partners = P.map(function (q, j) { return { id: q.id, v: j === i ? -1 : res.M[i][j] }; }).sort(function (x, y) { return y.v - x.v; }).slice(0, 2).filter(function (x) { return x.v > 0.01; });
+      var withTxt = partners.length ? partners.map(function (x) { return '<b>' + x.id + '</b> · ' + pct(x.v); }).join('<br>') : 'Mostly alone';
+
+      return '<div class="seat-row" role="row">' +
+        '<div class="sid" role="cell"><span class="dot c' + cls + '">' + p.id + '</span><div><b>' + cap(NAMES[p.id]) + '</b><small>' + p.pose + '</small></div></div>' +
+        '<div class="metric" role="cell"><span class="ml">Involvement</span><div class="bar"><span style="width:' + Math.min(100, 100 * res.ear[i] / scaleEar).toFixed(1) + '%"></span><i style="left:' + Math.min(100, 100 * (1 / n) / scaleEar).toFixed(1) + '%" title="Fair share"></i></div><span class="num">' + pct(res.ear[i]) + '</span></div>' +
+        '<div class="metric" role="cell"><span class="ml">Sidelined</span><div class="bar risk"><span style="width:' + Math.min(100, 100 * res.fade[i]).toFixed(1) + '%"></span></div><span class="num">' + pct(res.fade[i]) + '</span></div>' +
+        '<div class="odds" role="cell"><span class="ml">Group odds</span><div class="stack">' + segs.join('') + '</div></div>' +
+        '<div class="with" role="cell"><span class="ml">Usually with</span>' + withTxt + '</div>' +
+        '</div>';
+    });
+    els.seatRows.innerHTML = rows.join('');
+  }
+  function seg(cls, v, label) {
+    var w = 100 * v;
+    return '<span class="' + cls + '" style="flex-basis:' + w.toFixed(2) + '%" title="' + label + ': ' + pct(v) + '">' + (w >= 14 ? pct(v) : '') + '</span>';
+  }
+
+  /* ---------- Matrix ---------- */
+  function renderMatrix() {
+    var res = state.res, P = res.people, n = res.n;
+    var h = '<table class="mx"><thead><tr><th scope="col"></th>';
+    P.forEach(function (p) { h += '<th scope="col">' + p.id + '</th>'; });
+    h += '</tr></thead><tbody>';
+    for (var i = 0; i < n; i++) {
+      h += '<tr><th scope="row">' + P[i].id + '</th>';
+      for (var j = 0; j < n; j++) {
+        if (i === j) { h += '<td class="self" aria-label="same person">·</td>'; continue; }
+        var v = res.M[i][j], m = Math.round(Math.pow(v, 0.8) * 88);
+        h += '<td style="background:color-mix(in srgb, var(--mx) ' + m + '%, var(--track));color:' + (v > 0.5 ? 'var(--on-c)' : 'var(--ink)') + '" title="' + P[i].id + ' with ' + P[j].id + ': ' + pct(v) + '">' + Math.round(v * 100) + '</td>';
+      }
+      h += '</tr>';
+    }
+    els.matrix.innerHTML = h + '</tbody></table>';
+  }
+
+  /* ---------- Flow ---------- */
+  function solve() {
+    state.res = CM.solve(state.cfg, state.prm);
+    state.sel = 0;
+    state.focus = null;
+    drawHeat();
+    drawTop();
+    renderControls();
+    renderReadout();
+    renderSplits();
+    renderSeats();
+    renderMatrix();
+  }
+  function renderSelection() {
+    drawTop();
+    renderSplits();
+    renderSeats();
+  }
+  var pending = false;
+  function scheduleSolve() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { pending = false; solve(); });
+  }
+
+  function toggleSeat(id) {
+    var occ = state.cfg.occupied, at = occ.indexOf(id);
+    if (at >= 0) {
+      if (occ.length <= 2) { flash('Keep at least two people'); return; }
+      occ.splice(at, 1);
+    } else {
+      if (occ.length >= 8) { flash('All eight spots are full'); return; }
+      occ.push(id);
+    }
+    solve();
+  }
+
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    var b = t.closest('[data-n]');
+    if (b) { state.cfg.occupied = CM.FILL_ORDER.slice(0, +b.dataset.n); solve(); return; }
+    var o = t.closest('[data-opt]');
+    if (o) { state.cfg[o.dataset.opt] = o.dataset.val; solve(); return; }
+    var l = t.closest('[data-layer]');
+    if (l) {
+      var key = l.dataset.layer;
+      state.layers[key] = !state.layers[key];
+      if (key === 'heat') drawHeat();
+      drawTop();
+      renderControls();
+      return;
+    }
+    var s = t.closest('[data-rank]');
+    if (s) { state.sel = +s.dataset.rank; renderSelection(); return; }
+    var seat = t.closest('[data-seat]');
+    if (seat && els.top.contains(seat)) { toggleSeat(seat.dataset.seat); return; }
+    if (t.id === 'knob-reset') { state.prm = Object.assign({}, CM.DEFAULTS); solve(); }
+  });
+  els.top.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var seat = ev.target.closest('[data-seat]');
+    if (!seat) return;
+    ev.preventDefault();
+    var id = seat.dataset.seat;
+    toggleSeat(id);
+    var again = els.top.querySelector('.hit[data-seat="' + id + '"]');
+    if (again) again.focus();
+  });
+  document.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (!t.matches || !t.matches('input[type="range"][data-key]')) return;
+    var k = t.dataset.key;
+    state.prm[k] = parseFloat(t.value);
+    var knob = KNOBS.filter(function (x) { return x.key === k; })[0];
+    $('o-' + k).textContent = knob.fmt(state.prm[k]);
+    scheduleSolve();
+  });
+  els.top.addEventListener('pointerover', function (ev) {
+    var p = ev.target.closest('[data-person]');
+    setFocus(p ? +p.dataset.person : null);
+  });
+  els.top.addEventListener('pointerleave', function () { setFocus(null); });
+  els.top.addEventListener('focusin', function (ev) {
+    var seat = ev.target.closest('.hit');
+    if (!seat || !state.res) return;
+    var idx = -1;
+    state.res.people.forEach(function (p, i) { if (p.id === seat.dataset.seat) idx = i; });
+    setFocus(idx >= 0 ? idx : null);
+  });
+  els.top.addEventListener('focusout', function () { setFocus(null); });
+
+  try {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', drawHeat);
+    new MutationObserver(drawHeat).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  } catch (e) { /* theme listeners are optional */ }
+
+  buildKnobs();
+  solve();
+})();
+</script>
+
+</body></html>
